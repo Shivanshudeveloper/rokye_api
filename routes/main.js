@@ -14,6 +14,9 @@ const Enquery_Model = require('../models/Enquery');
 const WishList_Model = require('../models/WishList');
 const OtherStore_Model = require('../models/OtherStore');
 const ReferForm_Model = require('../models/ReferForm');
+const Property_Model = require("../models/Property");
+const Enquiry_Model=require("../models/EnquiryDetails");
+const Owner_Model=require("../models/OwnerEnquiry");
 
 function isNumeric(str) {
     if (typeof str != "string") return false // we only process strings!  
@@ -2356,6 +2359,118 @@ router.get('/getallreview', (req, res) => {
         })
         .catch(err => res.status(400).json(`Error: ${err}`))
 });
+router.get("/properties/query/:str",async (req,res)=>{
+    let q = req.params.str
+    console.log(q);
+    let results
+    try {
+        results = await Property_Model.find({"ap-city":{$regex:q,$options:"$i"}})
+        if(results.length === 0){
+            results = await Property_Model.find({"ap-area":{$regex:q,$options:"$i"}})
+            if(results.length === 0){
+                results = await Property_Model.find({"ap-title":{$regex:q,$options:"$i"}})
+            }
+        }
+        return res.json({data : results.map(e => e.toObject({getters:true}))})
+    } catch (err) {
+     return    res.status(400).send(err)
+    }
+})
+router.get("/properties" , async (req,res)=>{
+    let properties 
+    try{
+        properties = await Property_Model.find({})
+    }catch(err){
+        return res.status(400).send("Could Not Find")
+    }
+      return res.json({data : properties.map(e => e.toObject({getters:true}))})
+
+})
+router.get("/allProperties" , async (req,res)=>{
+    let properties 
+    try{
+        properties = await Properties_Model.find({})
+        console.log(properties);
+        
+    }catch(err){
+        return res.status(400).send("Could Not Find")
+    }
+
+      return res.json({data : properties.map(e =>e.toObject({getters:true}))})
+
+})
+router.post("/enquiryforproperty",async(req,res)=>{
+    console.log(req.body)
+    let enquiry  = new Owner_Model(req.body)
+    try{
+        await enquiry.save()
+    }catch(err){
+        console.log(err);
+        return res.status(400).json({err:"Unable to Save"})
+    }
+    res.status(200).json({message:"Save Successfull"})
+
+})
+router.get("/recent" , async (req,res)=>{
+    let properties 
+    try{
+        properties = await Properties_Model.find({})
+        console.log(properties);
+        
+    }catch(err){
+        return res.status(400).send("Could Not Find")
+    }
+
+      return res.json({data : properties.map(e =>e.toObject({getters:true}))})
+
+})
+router.post("/propertyById",async (req,res)=>{
+    let property
+    try{
+        property = await Property_Model.findById(req.body.id)
+        if(!property) throw "Can't Find"
+        
+    }catch(err){
+        return res.status(400).send("Could Not Find")
+    }
+    return res.status(200).json({data : property.toObject({getters:true})}) 
+})
+
+router.post("/enquirydetails",async(req,res)=>{
+    console.log(req.body)
+    let enquiry  = new Enquiry_Model(req.body)
+    try{
+        await enquiry.save()
+    }catch(err){
+        console.log(err);
+        return res.status(400).json({err:"Unable to Save"})
+    }
+    res.status(200).json({message:"Save Successfull"})
+});
+router.get("/ownerenquiries",async(req,res)=>{
+    let enquiries
+    try{
+        enquiries = await Owner_Model.find({})
+        console.log(enquiries);
+        
+    }catch(err){
+        return res.status(400).send("Could Not Find")
+    }
+
+      return res.json({data : enquiries.map(e =>e.toObject({getters:true}))
+    })
+});
 
 
+router.post("/addproperty",async (req,res)=>{
+     console.log(req.body)
+    let property  = new Property_Model(req.body)
+    try{
+        await property.save()
+    }catch(err){
+        console.log(err);
+        return res.status(400).json({message:"Unable to Save"})
+    }
+    res.status(200).json({message:"Save Successfull"})
+})
 module.exports = router;
